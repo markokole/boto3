@@ -1,0 +1,38 @@
+FROM centos:latest
+LABEL maintainer marko
+
+ARG USER=centos
+ARG V_ENV=boto3venv
+ARG VOLUME=/local-git
+
+USER root
+
+RUN yum install -y epel-release
+
+RUN yum install -y \
+        python3-pip
+# Upgrade pip
+RUN pip3 install --upgrade pip
+
+# create user
+RUN useradd -ms /bin/bash ${USER}
+USER ${USER}
+WORKDIR /home/${USER}
+
+# add credentials
+RUN mkdir -p /home/${USER}/.aws
+COPY aws/credentials /home/${USER}/.aws
+
+RUN pip3 install virtualenv --user
+
+# create virtual environment
+RUN /home/${USER}/.local/bin/virtualenv ${V_ENV}
+
+ENV PYTHONPATH=${VOLUME}
+
+# set PATH to python3, pip3
+ENV PATH=/home/${USER}/${V_ENV}/bin:$PATH
+
+# install python packages using pip in the virtual environment
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
